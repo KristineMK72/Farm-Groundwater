@@ -65,12 +65,13 @@ export default function LayerControls({ map }: { map: maplibregl.Map }) {
         padding: "10px",
         borderRadius: "6px",
         fontSize: "14px",
-        maxWidth: "220px",
+        maxWidth: "240px",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
       }}
     >
       <h4 style={{ margin: "0 0 8px 0" }}>Layers</h4>
       {layers.map((layer) => (
-        <div key={layer.id} style={{ marginBottom: "8px" }}>
+        <div key={layer.id} style={{ marginBottom: "10px" }}>
           <label style={{ display: "flex", alignItems: "center" }}>
             <input
               type="checkbox"
@@ -83,7 +84,7 @@ export default function LayerControls({ map }: { map: maplibregl.Map }) {
           {layer.legend && (
             <div style={{ marginLeft: "16px", marginTop: "4px" }}>
               {layer.legend.map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center" }}>
+                <div key={i} style={{ display: "flex", alignItems: "center", marginBottom: "2px" }}>
                   <span
                     style={{
                       display: "inline-block",
