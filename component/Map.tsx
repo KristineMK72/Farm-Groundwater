@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map } from "maplibre-gl";
+import LayerControls from "@/components/LayerControls";
 
 type Props = {
   lat: number;
@@ -13,6 +14,7 @@ type Props = {
 export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
   const mapRef = useRef<Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -54,109 +56,113 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         .addTo(map);
     });
 
-    // --- LAYERS ---
+    // Add layers once map is loaded
+    map.on("load", () => {
+      // 1. Nitrate Risk
+      map.addSource("nitrate-risk", {
+        type: "raster",
+        tiles: [
+          "https://gisdata.mn.gov/arcgis/rest/services/health/nitrate_risk/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+      });
+      map.addLayer({
+        id: "nitrate-risk-layer",
+        type: "raster",
+        source: "nitrate-risk",
+        paint: { "raster-opacity": 0.5 },
+      });
 
-    // 1. Nitrate Risk
-    map.addSource("nitrate-risk", {
-      type: "raster",
-      tiles: [
-        "https://gisdata.mn.gov/arcgis/rest/services/health/nitrate_risk/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-    });
-    map.addLayer({
-      id: "nitrate-risk-layer",
-      type: "raster",
-      source: "nitrate-risk",
-      paint: { "raster-opacity": 0.5 },
-    });
+      // 2. Water Table Depth
+      map.addSource("water-table", {
+        type: "raster",
+        tiles: [
+          "https://mnatlas.org/arcgis/rest/services/Water_Table_Depth/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+      });
+      map.addLayer({
+        id: "water-table-layer",
+        type: "raster",
+        source: "water-table",
+        paint: { "raster-opacity": 0.5 },
+      });
 
-    // 2. Water Table Depth
-    map.addSource("water-table", {
-      type: "raster",
-      tiles: [
-        "https://mnatlas.org/arcgis/rest/services/Water_Table_Depth/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-    });
-    map.addLayer({
-      id: "water-table-layer",
-      type: "raster",
-      source: "water-table",
-      paint: { "raster-opacity": 0.5 },
-    });
+      // 3. Observation Wells
+      map.addSource("observation-wells", {
+        type: "vector",
+        tiles: [
+          "https://gisdata.mn.gov/arcgis/rest/services/water/dnr_cgm_wells/MapServer/tile/{z}/{y}/{x}",
+        ],
+      });
+      map.addLayer({
+        id: "observation-wells-layer",
+        type: "circle",
+        source: "observation-wells",
+        "source-layer": "0",
+        paint: {
+          "circle-radius": 5,
+          "circle-color": "#0077cc",
+          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 1,
+        },
+      });
 
-    // 3. Observation Wells (points)
-    map.addSource("observation-wells", {
-      type: "vector",
-      tiles: [
-        "https://gisdata.mn.gov/arcgis/rest/services/water/dnr_cgm_wells/MapServer/tile/{z}/{y}/{x}",
-      ],
+      // Popups for wells
+      map.on("click", "observation-wells-layer", (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        const props = feature.properties || {};
+        const wellId = props.WELL_ID || "Unknown";
+        const aquifer = props.AQUIFER || "N/A";
+        const depth = props.WELL_DEPTH || "N/A";
+        const trend = props.TREND || "N/A";
+
+        new maplibregl.Popup()
+          .setLngLat(e.lngLat)
+          .setHTML(
+            `<b>Observation Well</b><br/>
+             Well ID: ${wellId}<br/>
+             Aquifer: ${aquifer}<br/>
+             Depth: ${depth} ft<br/>
+             Trend: ${trend}`
+          )
+          .addTo(map);
+      });
+
+      map.on("mouseenter", "observation-wells-layer", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "observation-wells-layer", () => {
+        map.getCanvas().style.cursor = "";
+      });
+
+      // 4. Aquifer / Bedrock Hydrogeology
+      map.addSource("aquifer", {
+        type: "raster",
+        tiles: [
+          "https://gisdata.mn.gov/arcgis/rest/services/geology/bedrock_hydrogeology/MapServer/tile/{z}/{y}/{x}",
+        ],
+        tileSize: 256,
+      });
+      map.addLayer({
+        id: "aquifer-layer",
+        type: "raster",
+        source: "aquifer",
+        paint: { "raster-opacity": 0.4 },
+      });
+
+      setMapReady(true);
     });
-    map.addLayer({
-      id: "observation-wells-layer",
-      type: "circle",
-      source: "observation-wells",
-      "source-layer": "0", // layer index
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#0077cc",
-        "circle-stroke-color": "#fff",
-        "circle-stroke-width": 1,
-      },
-    });
-
-    // 4. Aquifer / Bedrock Hydrogeology
-    map.addSource("aquifer", {
-      type: "raster",
-      tiles: [
-        "https://gisdata.mn.gov/arcgis/rest/services/geology/bedrock_hydrogeology/MapServer/tile/{z}/{y}/{x}",
-      ],
-      tileSize: 256,
-    });
-    map.addLayer({
-      id: "aquifer-layer",
-      type: "raster",
-      source: "aquifer",
-      paint: { "raster-opacity": 0.4 },
-    });
-
-    // --- Layer toggles ---
-    const toggleLayer = (id: string) => {
-      const visibility = map.getLayoutProperty(id, "visibility");
-      if (visibility === "visible") {
-        map.setLayoutProperty(id, "visibility", "none");
-      } else {
-        map.setLayoutProperty(id, "visibility", "visible");
-      }
-    };
-
-    // Add simple buttons
-    const controls = document.createElement("div");
-    controls.style.position = "absolute";
-    controls.style.top = "10px";
-    controls.style.left = "10px";
-    controls.style.background = "rgba(255,255,255,0.9)";
-    controls.style.padding = "8px";
-    controls.style.borderRadius = "4px";
-    controls.style.fontSize = "14px";
-
-    ["nitrate-risk-layer", "water-table-layer", "observation-wells-layer", "aquifer-layer"].forEach(
-      (id) => {
-        const btn = document.createElement("button");
-        btn.innerText = `Toggle ${id}`;
-        btn.style.display = "block";
-        btn.style.marginBottom = "4px";
-        btn.onclick = () => toggleLayer(id);
-        controls.appendChild(btn);
-      }
-    );
-
-    map.getContainer().appendChild(controls);
 
     mapRef.current = map;
     return () => map.remove();
   }, [lat, lon, zoom, markers]);
 
-  return <div ref={containerRef} style={{ height: "70vh", width: "100%" }} />;
+  return (
+    <div style={{ position: "relative" }}>
+      <div ref={containerRef} style={{ height: "70vh", width: "100%" }} />
+      {mapReady && mapRef.current && <LayerControls map={mapRef.current} />}
+    </div>
+  );
 }
