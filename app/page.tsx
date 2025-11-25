@@ -2,12 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { facility } from "@/data/facility";
-import FacilityPanel from "@/components/FacilityPanel";
+import FacilityPanel from "@/UI/FacilityPanel";
 
-// ✅ Marked as a Client Component with "use client"
-// ✅ Dynamic import allowed with { ssr: false }
-
-const MapView = dynamic(() => import("@/components/Map"), { ssr: false });
+// Dynamic import of Map component with client-side rendering only
+const MapView = dynamic(() => import("@/UI/Map"), { ssr: false });
 
 export default function HomePage() {
   const markers = [
@@ -19,10 +17,10 @@ export default function HomePage() {
   ];
 
   return (
-    <main style={{ maxWidth: 1100, margin: "0 auto" }}>
-      <header style={{ padding: "1rem 0" }}>
+    <main style={{ maxWidth: 1100, margin: "0 auto", padding: "1rem" }}>
+      <header style={{ marginBottom: "1.5rem" }}>
         <h1 style={{ margin: 0 }}>Groundwater & Nitrate Context</h1>
-        <p style={{ color: "#666" }}>
+        <p style={{ color: "#666", marginTop: "0.5rem" }}>
           Interactive dashboard showing Christensen Farms well data with nitrate risk, water table, and aquifer overlays.
         </p>
       </header>
@@ -36,8 +34,8 @@ export default function HomePage() {
 
       <FacilityPanel />
 
-      <section style={{ padding: "1rem 0" }}>
-        <h3 style={{ marginBottom: "0.5rem" }}>Next Layers to Add</h3>
+      <section style={{ marginTop: "2rem" }}>
+        <h3 style={{ marginBottom: "0.75rem" }}>Next Layers to Add</h3>
         <ul>
           <li><strong>Water table depth:</strong> statewide tiles overlay</li>
           <li><strong>Nitrate risk:</strong> semi-transparent raster or feature service</li>
