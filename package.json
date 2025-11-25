@@ -11,11 +11,15 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
-    
     "leaflet": "latest",
-    "react-leaflet": "latest", 
-    
+    "react-leaflet": "latest",
     "maplibre-gl": "latest",
-    "react-map-gl": "latest" 
+    "react-map-gl": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest"
   }
 }
