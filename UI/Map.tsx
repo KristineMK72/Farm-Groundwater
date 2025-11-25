@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map } from "maplibre-gl";
-import LayerControls from "@/components/LayerControls";
+// FIX 1: Changed from "@/components/..." to "./" since they are in the same folder
+import LayerControls from "./LayerControls";
+
+import "maplibre-gl/dist/maplibre-gl.css"; // Ensure CSS is imported
 
 type Props = {
   lat: number;
@@ -39,7 +42,7 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    // Facility marker
+    // Facility marker (These work because they are HTML Markers, not map layers)
     markers.forEach((m) => {
       const el = document.createElement("div");
       el.style.background = "#2c3e50";
@@ -71,6 +74,7 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "nitrate-risk",
         paint: { "raster-opacity": 0.5 },
+        layout: { visibility: "visible" }, // Explicit default
       });
 
       // 2. Water Table Depth
@@ -86,56 +90,30 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "water-table",
         paint: { "raster-opacity": 0.5 },
+        layout: { visibility: "visible" },
       });
 
       // 3. Observation Wells
+      // FIX 2: Changed to 'raster' because the URL provided is a standard MapServer tile service.
+      // To have clickable vectors, you would need a FeatureService (GeoJSON) or VectorTileServer.
       map.addSource("observation-wells", {
-        type: "vector",
+        type: "raster",
         tiles: [
           "https://gisdata.mn.gov/arcgis/rest/services/water/dnr_cgm_wells/MapServer/tile/{z}/{y}/{x}",
         ],
+        tileSize: 256,
       });
       map.addLayer({
         id: "observation-wells-layer",
-        type: "circle",
+        type: "raster", 
         source: "observation-wells",
-        "source-layer": "0",
-        paint: {
-          "circle-radius": 5,
-          "circle-color": "#0077cc",
-          "circle-stroke-color": "#fff",
-          "circle-stroke-width": 1,
-        },
+        paint: { "raster-opacity": 1 }, // Keep opacity high for dots
+        layout: { visibility: "visible" },
       });
 
-      // Popups for wells
-      map.on("click", "observation-wells-layer", (e) => {
-        const feature = e.features?.[0];
-        if (!feature) return;
-        const props = feature.properties || {};
-        const wellId = props.WELL_ID || "Unknown";
-        const aquifer = props.AQUIFER || "N/A";
-        const depth = props.WELL_DEPTH || "N/A";
-        const trend = props.TREND || "N/A";
-
-        new maplibregl.Popup()
-          .setLngLat(e.lngLat)
-          .setHTML(
-            `<b>Observation Well</b><br/>
-             Well ID: ${wellId}<br/>
-             Aquifer: ${aquifer}<br/>
-             Depth: ${depth} ft<br/>
-             Trend: ${trend}`
-          )
-          .addTo(map);
-      });
-
-      map.on("mouseenter", "observation-wells-layer", () => {
-        map.getCanvas().style.cursor = "pointer";
-      });
-      map.on("mouseleave", "observation-wells-layer", () => {
-        map.getCanvas().style.cursor = "";
-      });
+      /* NOTE: Click events disabled for Wells because the source is Raster (an image).
+         You cannot query properties (WELL_ID, AQUIFER) from a raster tile.
+      */
 
       // 4. Aquifer / Bedrock Hydrogeology
       map.addSource("aquifer", {
@@ -150,6 +128,7 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "aquifer",
         paint: { "raster-opacity": 0.4 },
+        layout: { visibility: "visible" },
       });
 
       setMapReady(true);
