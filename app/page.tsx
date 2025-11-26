@@ -41,16 +41,21 @@ export default function Home() {
       />
 
       {/* 2. The Floating Information Panel */}
-      <div 
-        style={{
-          position: "absolute",
-          top: "20px",
-          right: "20px",
-          zIndex: 1000, // Ensures it sits ON TOP of the map
-          maxHeight: "90vh",
-          overflowY: "auto"
-        }}
-      >
+    <div
+  style={{
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    zIndex: 1000,
+    maxHeight: "85vh",
+    overflowY: "auto",
+    width: "350px",
+    maxWidth: "90vw",   // ⭐ Makes it shrink on mobile!
+    background: "white",
+    borderRadius: "12px",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.15)",
+  }}
+>
         <FacilityPanel />
       </div>
 
