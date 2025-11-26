@@ -2,10 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map } from "maplibre-gl";
-// FIX 1: Changed from "@/components/..." to "./" since they are in the same folder
 import LayerControls from "./LayerControls";
 
-import "maplibre-gl/dist/maplibre-gl.css"; // Ensure CSS is imported
+import "maplibre-gl/dist/maplibre-gl.css";
 
 type Props = {
   lat: number;
@@ -42,14 +41,14 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    // Facility marker (These work because they are HTML Markers, not map layers)
+    // --- FACILITY MARKERS ---
     markers.forEach((m) => {
       const el = document.createElement("div");
       el.style.background = "#2c3e50";
       el.style.borderRadius = "50%";
       el.style.width = "14px";
       el.style.height = "14px";
-      el.style.border = "2px solid #fff";
+      el.style.border = "2px solid white";
 
       const popup = new maplibregl.Popup({ offset: 12 }).setHTML(m.html);
 
@@ -59,9 +58,9 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         .addTo(map);
     });
 
-    // Add layers once map is loaded
+    // --- ADD RASTER LAYERS ---
     map.on("load", () => {
-      // 1. Nitrate Risk
+      // Nitrate risk
       map.addSource("nitrate-risk", {
         type: "raster",
         tiles: [
@@ -73,11 +72,11 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         id: "nitrate-risk-layer",
         type: "raster",
         source: "nitrate-risk",
-        paint: { "raster-opacity": 0.5 },
-        layout: { visibility: "visible" }, // Explicit default
+        paint: { "raster-opacity": 0.55 },
+        layout: { visibility: "visible" },
       });
 
-      // 2. Water Table Depth
+      // Water table depth
       map.addSource("water-table", {
         type: "raster",
         tiles: [
@@ -89,13 +88,11 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         id: "water-table-layer",
         type: "raster",
         source: "water-table",
-        paint: { "raster-opacity": 0.5 },
+        paint: { "raster-opacity": 0.55 },
         layout: { visibility: "visible" },
       });
 
-      // 3. Observation Wells
-      // FIX 2: Changed to 'raster' because the URL provided is a standard MapServer tile service.
-      // To have clickable vectors, you would need a FeatureService (GeoJSON) or VectorTileServer.
+      // Observation wells (raster)
       map.addSource("observation-wells", {
         type: "raster",
         tiles: [
@@ -105,17 +102,13 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
       });
       map.addLayer({
         id: "observation-wells-layer",
-        type: "raster", 
+        type: "raster",
         source: "observation-wells",
-        paint: { "raster-opacity": 1 }, // Keep opacity high for dots
+        paint: { "raster-opacity": 1 },
         layout: { visibility: "visible" },
       });
 
-      /* NOTE: Click events disabled for Wells because the source is Raster (an image).
-         You cannot query properties (WELL_ID, AQUIFER) from a raster tile.
-      */
-
-      // 4. Aquifer / Bedrock Hydrogeology
+      // Aquifer / Bedrock hydrogeology
       map.addSource("aquifer", {
         type: "raster",
         tiles: [
@@ -127,7 +120,7 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         id: "aquifer-layer",
         type: "raster",
         source: "aquifer",
-        paint: { "raster-opacity": 0.4 },
+        paint: { "raster-opacity": 0.45 },
         layout: { visibility: "visible" },
       });
 
@@ -135,13 +128,35 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
     });
 
     mapRef.current = map;
+
     return () => map.remove();
   }, [lat, lon, zoom, markers]);
 
   return (
-    <div style={{ position: "relative" }}>
-      <div ref={containerRef} style={{ height: "70vh", width: "100%" }} />
-      {mapReady && mapRef.current && <LayerControls map={mapRef.current} />}
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+      }}
+    >
+      {/* FULL-SCREEN MAP */}
+      <div
+        ref={containerRef}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+      />
+
+      {/* LAYER PANEL */}
+      {mapReady && mapRef.current && (
+        <LayerControls map={mapRef.current} />
+      )}
     </div>
   );
 }
