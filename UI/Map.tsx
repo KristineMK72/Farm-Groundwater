@@ -41,7 +41,7 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
 
     map.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    // --- FACILITY MARKERS ---
+    // ---- FACILITY MARKERS ----
     markers.forEach((m) => {
       const el = document.createElement("div");
       el.style.background = "#2c3e50";
@@ -58,9 +58,8 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         .addTo(map);
     });
 
-    // --- ADD RASTER LAYERS ---
+    // ---- RASTER LAYERS ----
     map.on("load", () => {
-      // Nitrate risk
       map.addSource("nitrate-risk", {
         type: "raster",
         tiles: [
@@ -73,10 +72,8 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "nitrate-risk",
         paint: { "raster-opacity": 0.55 },
-        layout: { visibility: "visible" },
       });
 
-      // Water table depth
       map.addSource("water-table", {
         type: "raster",
         tiles: [
@@ -89,10 +86,8 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "water-table",
         paint: { "raster-opacity": 0.55 },
-        layout: { visibility: "visible" },
       });
 
-      // Observation wells (raster)
       map.addSource("observation-wells", {
         type: "raster",
         tiles: [
@@ -105,10 +100,8 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "observation-wells",
         paint: { "raster-opacity": 1 },
-        layout: { visibility: "visible" },
       });
 
-      // Aquifer / Bedrock hydrogeology
       map.addSource("aquifer", {
         type: "raster",
         tiles: [
@@ -121,14 +114,12 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "aquifer",
         paint: { "raster-opacity": 0.45 },
-        layout: { visibility: "visible" },
       });
 
       setMapReady(true);
     });
 
     mapRef.current = map;
-
     return () => map.remove();
   }, [lat, lon, zoom, markers]);
 
@@ -141,7 +132,7 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         overflow: "hidden",
       }}
     >
-      {/* FULL-SCREEN MAP */}
+      {/* Fullscreen Map */}
       <div
         ref={containerRef}
         style={{
@@ -149,11 +140,11 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
           top: 0,
           left: 0,
           width: "100%",
-          height: "100%",
+          height: "100vh",
         }}
       />
 
-      {/* LAYER PANEL */}
+      {/* Slide-Up Drawer for Layers */}
       {mapReady && mapRef.current && (
         <LayerControls map={mapRef.current} />
       )}
