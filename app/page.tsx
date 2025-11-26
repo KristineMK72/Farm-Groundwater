@@ -51,7 +51,7 @@ export default function Home() {
           overflowY: "auto"
         }}
       >
-        <FacilityPanel data={facility} />
+        <FacilityPanel />
       </div>
 
     </main>
