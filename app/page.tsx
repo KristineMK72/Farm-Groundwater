@@ -16,15 +16,17 @@ const MapView = dynamic(() => import("../UI/Map"), {
 });
 
 export default function Home() {
-  // Center the map roughly on Minnesota
-  const startLat = 46.5;
-  const startLon = -94.5;
+  // Center roughly on Martin County (Southern MN) where the data is
+  const startLat = 43.65; 
+  const startLon = -94.6; 
+  // Recommended zoom: 10 or 11
 
-  // Convert your facility data into markers for the map
+
   const mapMarkers = facility.map((f) => ({
-    lat: f.latitude,
-    lon: f.longitude,
-    html: `<div style="text-align:center;"><b>${f.name}</b><br/>${f.city}</div>`,
+    lat: f.location.lat,     // ✅ Correct: Accessing nested location
+    lon: f.location.lon,     // ✅ Correct: Accessing nested location
+    // ✅ Correct: Using location.label instead of city
+    html: `<div style="text-align:center;"><b>${f.name}</b><br/>${f.location.label}</div>`,
   }));
 
   return (
