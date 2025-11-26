@@ -1,107 +1,90 @@
 "use client";
 
 import { useState } from "react";
-import maplibregl from "maplibre-gl";
 
-type LayerConfig = {
-  id: string;
-  label: string;
-  legend?: { color: string; meaning: string }[];
+type LayerControlsProps = {
+  map: any;
 };
 
-const layers: LayerConfig[] = [
-  {
-    id: "nitrate-risk-layer",
-    label: "Nitrate Risk",
-    legend: [
-      { color: "#ff0000", meaning: "High risk" },
-      { color: "#ffa500", meaning: "Moderate risk" },
-      { color: "#ffff00", meaning: "Low risk" },
-    ],
-  },
-  {
-    id: "water-table-layer",
-    label: "Water Table Depth",
-    legend: [
-      { color: "#0000ff", meaning: "Shallow (<20 ft)" },
-      { color: "#00ffff", meaning: "Moderate (20–50 ft)" },
-      { color: "#00ff00", meaning: "Deep (>50 ft)" },
-    ],
-  },
-  {
-    id: "observation-wells-layer",
-    label: "Observation Wells",
-    legend: [{ color: "#0077cc", meaning: "Well location" }],
-  },
-  {
-    id: "aquifer-layer",
-    label: "Aquifers / Bedrock",
-    legend: [
-      { color: "#8b4513", meaning: "Sandstone aquifer" },
-      { color: "#708090", meaning: "Shale/bedrock" },
-      { color: "#2e8b57", meaning: "Carbonate aquifer" },
-    ],
-  },
-];
+export default function LayerControls({ map }: LayerControlsProps) {
+  const [open, setOpen] = useState(false);
 
-export default function LayerControls({ map }: { map: maplibregl.Map }) {
-  const [visibleLayers, setVisibleLayers] = useState<Record<string, boolean>>(
-    Object.fromEntries(layers.map((l) => [l.id, true]))
-  );
+  const toggleLayer = (layerId: string) => {
+    const visibility =
+      map.getLayoutProperty(layerId, "visibility") === "visible"
+        ? "none"
+        : "visible";
 
-  const toggleLayer = (id: string) => {
-    const isVisible = visibleLayers[id];
-    map.setLayoutProperty(id, "visibility", isVisible ? "none" : "visible");
-    setVisibleLayers({ ...visibleLayers, [id]: !isVisible });
+    map.setLayoutProperty(layerId, "visibility", visibility);
   };
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: 10,
-        left: 10,
-        background: "rgba(255,255,255,0.95)",
-        padding: "10px",
-        borderRadius: "6px",
-        fontSize: "14px",
-        maxWidth: "240px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-      }}
-    >
-      <h4 style={{ margin: "0 0 8px 0" }}>Layers</h4>
-      {layers.map((layer) => (
-        <div key={layer.id} style={{ marginBottom: "10px" }}>
-          <label style={{ display: "flex", alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={visibleLayers[layer.id]}
-              onChange={() => toggleLayer(layer.id)}
-              style={{ marginRight: "6px" }}
-            />
-            {layer.label}
+    <>
+      {/* --- TOGGLE BUTTON --- */}
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          position: "absolute",
+          bottom: "20px",
+          right: "20px",
+          zIndex: 2000,
+          background: "#000",
+          color: "#fff",
+          padding: "12px 18px",
+          borderRadius: "8px",
+          border: "none",
+          fontSize: "16px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+        }}
+      >
+        {open ? "Close Layers" : "Layers"}
+      </button>
+
+      {/* --- SLIDE-UP PANEL --- */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: open ? "0" : "-260px",
+          left: 0,
+          width: "100%",
+          height: "260px",
+          background: "#fff",
+          borderTopLeftRadius: "14px",
+          borderTopRightRadius: "14px",
+          padding: "18px 22px",
+          boxShadow: "0 -4px 20px rgba(0,0,0,0.15)",
+          zIndex: 1500,
+          transition: "bottom 0.35s ease",
+          overflowY: "auto",
+        }}
+      >
+        <h3 style={{ marginTop: 0, fontSize: "18px", fontWeight: 600 }}>
+          Map Layers
+        </h3>
+
+        {/* CHECKBOX LIST */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <label style={{ fontSize: "16px" }}>
+            <input type="checkbox" defaultChecked onChange={() => toggleLayer("nitrate-risk-layer")} />{" "}
+            Nitrate Risk
           </label>
-          {layer.legend && (
-            <div style={{ marginLeft: "16px", marginTop: "4px" }}>
-              {layer.legend.map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", marginBottom: "2px" }}>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: "14px",
-                      height: "14px",
-                      background: item.color,
-                      marginRight: "6px",
-                      border: "1px solid #333",
-                    }}
-                  />
-                  <span>{item.meaning}</span>
-                </div>
-              ))}
-            </div>
-          )}
+
+          <label style={{ fontSize: "16px" }}>
+            <input type="checkbox" defaultChecked onChange={() => toggleLayer("water-table-layer")} />{" "}
+            Water Table Depth
+          </label>
+
+          <label style={{ fontSize: "16px" }}>
+            <input type="checkbox" defaultChecked onChange={() => toggleLayer("observation-wells-layer")} />{" "}
+            Observation Wells
+          </label>
+
+          <label style={{ fontSize: "16px" }}>
+            <input type="checkbox" defaultChecked onChange={() => toggleLayer("aquifer-layer")} />{" "}
+            Aquifers / Bedrock
+          </label>
         </div>
-      ))}
-    </div>
+      </div>
+    </>
   );
 }
