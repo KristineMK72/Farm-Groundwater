@@ -60,10 +60,12 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
 
     // ---- RASTER LAYERS ----
     map.on("load", () => {
+      // Nitrate Risk: Updated to MDH Source Water Protection service (covers SE MN primarily; statewide limited)
+      // Note: For full statewide nitrate data, consider MPCA Groundwater Contamination Atlas or downloads from MDH
       map.addSource("nitrate-risk", {
         type: "raster",
         tiles: [
-          "https://gisdata.mn.gov/arcgis/rest/services/health/nitrate_risk/MapServer/tile/{z}/{y}/{x}",
+          "https://gisdata.mn.gov/arcgis/rest/services/health/Source_Water_Protection/MapServer/tile/{z}/{y}/{x}",
         ],
         tileSize: 256,
       });
@@ -74,10 +76,11 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         paint: { "raster-opacity": 0.55 },
       });
 
+      // Water Table Depth: Updated to DNR statewide service (from Methods for Estimating Water-Table Elevation)
       map.addSource("water-table", {
         type: "raster",
         tiles: [
-          "https://mnatlas.org/arcgis/rest/services/Water_Table_Depth/MapServer/tile/{z}/{y}/{x}",
+          "https://arcgis.dnr.state.mn.us/public/rest/services/environment/mndnr_hydrographic_position_index/MapServer/tile/{z}/{y}/{x}",
         ],
         tileSize: 256,
       });
@@ -88,20 +91,26 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         paint: { "raster-opacity": 0.55 },
       });
 
+      // Observation Wells: Updated to DNR County Well Index (CWI/MWI) for monitoring/observation wells
+      // Filters to observation/monitoring wells via service; statewide ~500k wells
       map.addSource("observation-wells", {
-        type: "raster",
-        tiles: [
-          "https://gisdata.mn.gov/arcgis/rest/services/water/dnr_cgm_wells/MapServer/tile/{z}/{y}/{x}",
-        ],
-        tileSize: 256,
+        type: "vector",
+        url: "https://gisdata.mn.gov/arcgis/rest/services/water/Minnesota_Well_Index/MapServer",
       });
       map.addLayer({
         id: "observation-wells-layer",
-        type: "raster",
+        type: "circle",
         source: "observation-wells",
-        paint: { "raster-opacity": 1 },
+        "source-layer": "0", // Adjust layer index if needed (0 = wells)
+        paint: {
+          "circle-radius": 3,
+          "circle-color": "#007cbf",
+          "circle-opacity": 0.8,
+        },
+        filter: ["==", "WellType", "Observation"], // Filter for observation wells; customize based on schema
       });
 
+      // Aquifers/Bedrock: Updated to MGS Bedrock Hydrogeology service
       map.addSource("aquifer", {
         type: "raster",
         tiles: [
@@ -114,6 +123,73 @@ export default function MapView({ lat, lon, zoom = 12, markers = [] }: Props) {
         type: "raster",
         source: "aquifer",
         paint: { "raster-opacity": 0.45 },
+      });
+
+      // Additional Water-Related Layers for Enhanced Coverage
+      // Groundwater Contamination Areas (MPCA): Areas of concern for nitrate/pollutants
+      map.addSource("gw-contamination", {
+        type: "vector",
+        url: "https://gisdata.mn.gov/arcgis/rest/services/env/MN_GW_Contamination_Atlas/MapServer",
+      });
+      map.addLayer({
+        id: "gw-contamination-layer",
+        type: "fill",
+        source: "gw-contamination",
+        "source-layer": "0", // Areas of concern layer
+        paint: {
+          "fill-color": "#ff0000",
+          "fill-opacity": 0.3,
+        },
+      });
+
+      // Vulnerable Groundwater Areas (MDA/MDH): Quarter-sections vulnerable to nitrate leaching
+      map.addSource("vulnerable-gw", {
+        type: "vector",
+        url: "https://gisdata.mn.gov/arcgis/rest/services/agri/Vulnerable_Groundwater_Areas/MapServer",
+      });
+      map.addLayer({
+        id: "vulnerable-gw-layer",
+        type: "fill",
+        source: "vulnerable-gw",
+        "source-layer": "0",
+        paint: {
+          "fill-color": "#ffff00",
+          "fill-opacity": 0.4,
+        },
+      });
+
+      // Groundwater Provinces (DNR): Regional aquifer summaries
+      map.addSource("gw-provinces", {
+        type: "vector",
+        url: "https://gisdata.mn.gov/arcgis/rest/services/geos/Groundwater_Provinces_MN/MapServer",
+      });
+      map.addLayer({
+        id: "gw-provinces-layer",
+        type: "fill",
+        source: "gw-provinces",
+        "source-layer": "0",
+        paint: {
+          "fill-color": "#00ff00",
+          "fill-opacity": 0.2,
+        },
+      });
+
+      // Springs Inventory (DNR): Point layer for springs (groundwater discharge)
+      map.addSource("springs", {
+        type: "vector",
+        url: "https://arcgis.dnr.state.mn.us/public/rest/services/water/Springs_Inventory/MapServer",
+      });
+      map.addLayer({
+        id: "springs-layer",
+        type: "circle",
+        source: "springs",
+        "source-layer": "0",
+        paint: {
+          "circle-radius": 4,
+          "circle-color": "#4169E1",
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#ffffff",
+        },
       });
 
       setMapReady(true);
