@@ -84,10 +84,12 @@ export default function MapView({ lat, lon, zoom = 11, markers = [] }: Props) {
 
       // 3. All Minnesota Wells (500k+) — DNR/MDH
       map.addSource("mn-wells", {
-        type: "vector",
-        tiles: ["https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Minnesota_Well_Index_View/FeatureServer/0/tiles/{z}/{x}/{y}"],
-        tileSize: 512,
-      });
+       // Corrected Code
+       type: "vector",
+       tiles: ["https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Minnesota_Well_Index_View/FeatureServer/0/tiles/{z}/{x}/{y}"],
+       // Removed tileSize: 512 as it's not a valid property for VectorSourceSpecification
+    });
+
       map.addLayer({
         id: "wells-layer",
         type: "circle",
