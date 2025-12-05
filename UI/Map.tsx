@@ -19,11 +19,15 @@ export default function MapView({ lat, lon, zoom = 11, markers = [] }: Props) {
   useEffect(() => {
     if (mapRef.current) return;
 
-    // --- 1. Map Initialization with a Valid Style ---
+    // --- 1. Map Initialization with a Blank Style ---
+    // We use a blank style placeholder. All layers, including the base map, are added manually.
     const map = new maplibregl.Map({
       container: containerRef.current!,
-      // Use a valid MapLibre Style JSON URL here
-      style: "https://demotiles.maplibre.org/style.json",
+      style: {
+        version: 8,
+        sources: {},
+        layers: [],
+      },
       center: [lon, lat],
       zoom,
       attributionControl: false,
@@ -53,25 +57,28 @@ export default function MapView({ lat, lon, zoom = 11, markers = [] }: Props) {
 
     map.on("load", () => {
       
-      // --- NEW: Minnesota DNR Base Map (Background) ---
-      map.addSource("mn-basemap", {
+      // --- NEW: OpenStreetMap (OSM) Base Map (No API Key) ---
+      map.addSource("osm-basemap", {
         type: "raster",
         tiles: [
-          "https://basemaps.dnr.state.mn.us/arcgis/rest/services/composite/mn_composite/MapServer/WMTS/tile/1.0.0/mn_composite/{z}/{y}/{x}.jpg"
+          "https://a.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://b.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          "https://c.tile.openstreetmap.org/{z}/{x}/{y}.png",
         ],
         tileSize: 256,
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+        maxzoom: 18,
       });
 
       map.addLayer({
-        id: "mn-basemap-layer",
+        id: "osm-basemap-layer",
         type: "raster",
-        source: "mn-basemap",
-        maxzoom: 18, // Max zoom of the DNR service
-      }, 'vulnerable-gw-layer'); // Add *below* the first overlay layer
+        source: "osm-basemap",
+        // Add this layer first, so it's at the very bottom
+      });
 
       // ——— ALL WORKING MINNESOTA GROUNDWATER & NITRATE LAYERS ———
-      // Note: mn-basemap is now the first layer in the load block
-
+      
       // 1. Vulnerable Groundwater Areas (MDA)
       map.addSource("vulnerable-gw", {
         type: "raster",
@@ -102,7 +109,7 @@ export default function MapView({ lat, lon, zoom = 11, markers = [] }: Props) {
         paint: { "raster-opacity": 0.6 },
       });
 
-      // 3. All Minnesota Wells (500k+) — Corrected Vector Source
+      // 3. All Minnesota Wells (500k+)
       map.addSource("mn-wells", {
        type: "vector",
        tiles: ["https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Minnesota_Well_Index_View/FeatureServer/0/tiles/{z}/{x}/{y}"],
@@ -112,7 +119,7 @@ export default function MapView({ lat, lon, zoom = 11, markers = [] }: Props) {
         id: "wells-layer",
         type: "circle",
         source: "mn-wells",
-        "source-layer": "Minnesota_Well_Index_View", // Confirmed Source Layer Name
+        "source-layer": "Minnesota_Well_Index_View",
         paint: {
           "circle-color": "#3498db",
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 14, 5],
@@ -158,7 +165,7 @@ export default function MapView({ lat, lon, zoom = 11, markers = [] }: Props) {
     return () => map.remove();
   }, [lat, lon, zoom, markers]);
 
-  // --- CLEAN LAYER CONTROL (no more blocking boxes!) ---
+  // --- CLEAN LAYER CONTROL ---
   const layers = [
     { id: "vulnerable-gw-layer", name: "Nitrate Risk (Vulnerable Areas)", color: "#e67e22" },
     { id: "watertable-layer", name: "Water Table Depth", color: "#27ae60" },
