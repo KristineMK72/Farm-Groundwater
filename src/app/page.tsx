@@ -5,12 +5,12 @@ import { useState } from "react";
 
 // --- RELATIVE IMPORTS (Fixes the Vercel Build Error) ---
 // We go "up" one level (..) to find the UI and data folders
-import FacilityPanel from "../UI/FacilityPanel"; 
+import FacilityPanel from "../components/ui/FacilityPanel"; 
 import { facility } from "../data/facility"; 
 
 // --- DYNAMIC MAP IMPORT ---
 // Disables Server-Side Rendering (SSR) for the map to prevent crashes
-const MapView = dynamic(() => import("../UI/Map"), { 
+const MapView = dynamic(() => import("../components/ui/Map"), { 
   ssr: false,
   loading: () => <div style={{ padding: "20px" }}>Loading Map...</div>
 });
